@@ -8,5 +8,6 @@ public class SanityTest {
         System.out.println("SanityTest running");
         System.out.println("Browser: " + System.getProperty("browser"));
         System.out.println("Base URL: " + System.getProperty("baseUrl"));
+        //email verification
     }
 }
