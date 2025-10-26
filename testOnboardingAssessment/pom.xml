@@ -1,0 +1,137 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>org.example</groupId>
+  <artifactId>testautomationonbaording</artifactId>
+  <version>1.0-SNAPSHOT</version>
+  <packaging>jar</packaging>
+
+  <name>testautomationonbaording</name>
+  <url>http://maven.apache.org</url>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>3.8.1</version>
+      <scope>test</scope>
+    </dependency>
+
+      <dependency>
+          <groupId>org.testng</groupId>
+          <artifactId>testng</artifactId>
+          <version>7.11.0</version>
+          <scope>test</scope>
+      </dependency>
+
+      <dependency>
+          <groupId>org.seleniumhq.selenium</groupId>
+          <artifactId>selenium-java</artifactId>
+          <version>4.36.0</version>
+      </dependency>
+      <dependency>
+          <groupId>org.testng</groupId>
+          <artifactId>testng</artifactId>
+          <version>7.11.0</version>
+          <scope>compile</scope>
+      </dependency>
+  </dependencies>
+    <build>
+        <plugins>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.22.2</version>
+                <configuration>
+                    <systemPropertyVariables>
+                        <browser>${browser}</browser>
+                        <baseUrl>${baseUrl}</baseUrl>
+                    </systemPropertyVariables>
+                    <includes>
+                        <include>**/*RegressionTest.java</include>
+                        <include>**/*SanityTest.java</include>
+                    </includes>
+                    <excludes>
+                        <exclude>**/ExcludeTest.java</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+
+            <!-- Clean up logs after tests -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>1.8</version>
+                <executions>
+                    <execution>
+                        <phase>verify</phase>
+                        <goals><goal>run</goal></goals>
+                        <configuration>
+                            <tasks>
+                                <delete>
+                                    <fileset dir="${project.basedir}/logs" includes="*.log"/>
+                                </delete>
+                            </tasks>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Generate HTML report -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-report-plugin</artifactId>
+                <version>3.0.0-M9</version>
+            </plugin>
+        </plugins>
+    </build>
+
+    <reporting>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-report-plugin</artifactId>
+                <version>3.0.0-M9</version>
+            </plugin>
+        </plugins>
+    </reporting>
+
+    <profiles>
+        <!-- Dev Env -->
+        <profile>
+            <id>dev</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <baseUrl>https://www.google.com</baseUrl>
+                <browser>chrome</browser>
+            </properties>
+        </profile>
+
+        <!-- QA Env -->
+        <profile>
+            <id>qa</id>
+            <properties>
+                <baseUrl>https://www.google.com</baseUrl>
+                <browser>firefox</browser>
+            </properties>
+        </profile>
+
+        <!-- Production Env -->
+        <profile>
+            <id>prod</id>
+            <properties>
+                <baseUrl>https://www.google.com</baseUrl>
+                <browser>edge</browser>
+            </properties>
+        </profile>
+    </profiles>
+
+</project>
