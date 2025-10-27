@@ -1,0 +1,35 @@
+node {
+    // Define parameters
+    properties([
+        parameters([
+            choice(name: 'ENVIRONMENT', choices: ['dev', 'qa', 'prod'], description: 'Select environment profile'),
+        ])
+    ])
+
+    stage('Checkout') {
+        echo "Checking out code from GitHub"
+        checkout scm
+    }
+
+    stage('Build & Test') {
+        dir('testOnboardingAssessment') {
+            echo "Running Maven build and tests for environment: ${ENVIRONMENT}"
+            try {
+                bat "mvn clean test surefire-report:report -P${ENVIRONMENT}"
+            } catch (err) {
+                currentBuild.result = 'FAILURE'
+                error "Build failed: ${err}"
+            }
+        }
+    }
+
+    stage('Publish JUnit Results') {
+        junit '**/target/surefire-reports/*.xml'
+    }
+
+    }
+
+    stage('Notify') {
+        echo "Build completed. You can add Slack or email notifications here."
+    }
+}
