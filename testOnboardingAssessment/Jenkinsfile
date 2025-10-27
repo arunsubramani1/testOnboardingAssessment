@@ -1,35 +1,63 @@
-node {
-    // Define parameters
-    properties([
-        parameters([
-            choice(name: 'ENVIRONMENT', choices: ['dev', 'qa', 'prod'], description: 'Select environment profile'),
-        ])
-    ])
+pipeline {
+    agent any
 
-    stage('Checkout') {
-        echo "Checking out code from GitHub"
-        checkout scm
+    parameters {
+        choice(name: 'ENVIRONMENT', choices: ['dev', 'qa', 'prod'], description: 'Select environment profile')
     }
 
-    stage('Build & Test') {
-        dir('testOnboardingAssessment') {
-            echo "Running Maven build and tests for environment: ${ENVIRONMENT}"
-            try {
-                bat "mvn clean test surefire-report:report -P${ENVIRONMENT}"
-            } catch (err) {
-                currentBuild.result = 'FAILURE'
-                error "Build failed: ${err}"
+    environment {
+        MAVEN_OPTS = "-Dmaven.test.failure.ignore=false"
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                echo "Checking out code from GitHub..."
+                checkout scm
+            }
+        }
+
+        stage('Build & Test') {
+            steps {
+                dir('testOnboardingAssessment') {
+                    echo "Running Maven build and tests for environment: ${params.ENVIRONMENT}"
+                    bat "mvn clean test surefire-report:report -P${params.ENVIRONMENT}"
+                }
+            }
+        }
+
+        stage('Publish JUnit Results') {
+            steps {
+                junit '**/target/surefire-reports/*.xml'
+            }
+        }
+
+        stage('Publish HTML Report') {
+            steps {
+                publishHTML([
+                    reportDir: 'testOnboardingAssessment/target/site',
+                    reportFiles: 'surefire-report.html',
+                    reportName: 'Test Report',
+                    keepAll: true,
+                    alwaysLinkToLastBuild: true,
+                    allowMissing: true
+                ])
+            }
+        }
+
+        stage('Notify') {
+            steps {
+                echo "Build completed. You can add Slack or email notifications here."
             }
         }
     }
 
-    stage('Publish JUnit Results') {
-        junit '**/target/surefire-reports/*.xml'
-    }
-
-    }
-
-    stage('Notify') {
-        echo "Build completed. You can add Slack or email notifications here."
+    post {
+        success {
+            echo "Build succeeded"
+        }
+        failure {
+            echo "Build failed"
+        }
     }
 }
