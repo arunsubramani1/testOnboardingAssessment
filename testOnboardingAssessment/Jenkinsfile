@@ -1,63 +1,53 @@
 pipeline {
     agent any
 
-    parameters {
-        choice(name: 'ENVIRONMENT', choices: ['dev', 'qa', 'prod'], description: 'Select environment profile')
-    }
-
     environment {
-        MAVEN_OPTS = "-Dmaven.test.failure.ignore=false"
+        BRANCH_NAME = "${env.BRANCH_NAME}"
     }
 
     stages {
         stage('Checkout') {
             steps {
-                echo "Checking out code from GitHub..."
                 checkout scm
+                echo "Checked out branch: ${env.BRANCH_NAME}"
             }
         }
 
-        stage('Build & Test') {
+        stage('Build') {
             steps {
-                dir('testOnboardingAssessment') {
-                    echo "Running Maven build and tests for environment: ${params.ENVIRONMENT}"
-                    bat "mvn clean test surefire-report:report -P${params.ENVIRONMENT}"
-                }
+                bat "mvn clean compile"
             }
         }
 
-        stage('Publish JUnit Results') {
+        stage('Test') {
+            steps {
+                bat "mvn test"
+            }
+        }
+
+        stage('Report') {
             steps {
                 junit '**/target/surefire-reports/*.xml'
             }
         }
 
-        stage('Publish HTML Report') {
-            steps {
-                publishHTML([
-                    reportDir: 'testOnboardingAssessment/target/site',
-                    reportFiles: 'surefire-report.html',
-                    reportName: 'Test Report',
-                    keepAll: true,
-                    alwaysLinkToLastBuild: true,
-                    allowMissing: true
-                ])
+        stage('Deploy') {
+            when {
+                branch 'main'
             }
-        }
-
-        stage('Notify') {
             steps {
-                echo "Build completed. You can add Slack or email notifications here."
+                echo "Deploying from main branch..."
+                // Add deployment logic here
             }
         }
     }
 
     post {
         success {
-            echo "Build succeeded"
+            echo "Build succeeded on ${env.BRANCH_NAME}"
         }
         failure {
-            echo "Build failed"
+            echo "Build failed on ${env.BRANCH_NAME}"
         }
     }
 }
